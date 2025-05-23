@@ -1,3 +1,7 @@
+#ifndef STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif
+#include "stb_image.h"
 #include "header.hpp"
 
 int main(){
@@ -53,6 +57,30 @@ int main(){
    // Unbind VAO
    glBindVertexArray(0);
 
+   int width, height, nrChannels;
+    unsigned char *data = stbi_load("earth.jpg", &width, &height, &nrChannels, 0);
+    if (!data) {
+        std::cerr << "Failed to load image!" << std::endl;
+    }
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // Set texture wrapping/filtering options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Upload the texture data
+    GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Free the image memory
+    stbi_image_free(data);
+
    GLuint shaderProgram = createShaderProgram("shader.vert", "shader.frag");
 
     while (!glfwWindowShouldClose(window))
@@ -60,12 +88,16 @@ int main(){
         // Input handling
         // ...
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw the triangle
         glUseProgram(shaderProgram);
+        glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0); // texture unit 0
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -82,3 +114,6 @@ int main(){
     // Terminate GLFW
     glfwTerminate();
 }
+
+
+

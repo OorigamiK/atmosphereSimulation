@@ -3,9 +3,9 @@ out vec4 FragColor;
 
 in vec3 VPos;
 
-float phase(float cosTheta, float g){
+uniform sampler2D texture1;
 
-    return 1.0;
+float phase(float cosTheta, float g){
     float subRes1=1.5*(1-g*g)/(2*(2+g*g));
     float subRes2=(1+cosTheta*cosTheta)/(1+g*g-2*g*cosTheta);
     return subRes1*subRes2;
@@ -23,7 +23,7 @@ vec2 rayBallIntersection(vec3 rayDir, vec3 rayPos, vec3 spherePos, float r) {
         float sqrtDisc = sqrt(discriminant);
         float t1 = -b - sqrtDisc;
         float t2 = -b + sqrtDisc;
-        res = vec2(t1, t2);
+        res = vec2(max(0,t1), max(0,t2));
     }
     return res;
 }
@@ -45,21 +45,14 @@ float outScattering(vec3 P1, vec3 P2, float lambda, float avgAtmosDensHeight, in
         vec3 P=(1-t)*P1+t*P2;
         float distToSpherePos=length(spherePos-P);
         float height= (distToSpherePos-planetR)/(atmosphereR-planetR);
-        if (distToSpherePos!=distToSpherePos){
-            return 1.0;
-        }
-        if (i==0 || i==numberOfIterations-1){
-            integral+=0.5*exp(-height/avgAtmosDensHeight);
-        }
-        else{
-            if (exp(-height/avgAtmosDensHeight)>=0){
-                return 1.0;
-            }
-            integral+=exp(-height/avgAtmosDensHeight);
-        }
+
+        height=max(0,min(1,height));
+
+        integral+=exp(-height/avgAtmosDensHeight)*(1-height);
+        
     
     }
-    return integral/**scattering(lambda)/numberOfIterations*/;
+    return integral*scattering(lambda)/numberOfIterations;
 }
 
 //I_v(\lambda) = I_s(\lambda) \times K(\lambda) \times F(\theta, g) \times \int_{P_a}^{P_b} \exp\left(\frac{-h}{H_0}\right) \times \exp\left(-t(P{P_c}, \lambda) - t(P{P_a}, \lambda)\right) \, ds
@@ -71,6 +64,7 @@ float inScattering(float lambda, float avgAtmosDensHeight, float g, vec3 P1, vec
 
         float distToSpherePos=length(spherePos-P);
         float height= (distToSpherePos-planetR)/(atmosphereR-planetR);
+        height=max(0,min(1, height));
         float t1=exp(-height/avgAtmosDensHeight);
 
         float t2 = outScattering(P, sunPos, lambda, avgAtmosDensHeight,  numberOfIterations2, spherePos, atmosphereR, planetR);
@@ -79,16 +73,17 @@ float inScattering(float lambda, float avgAtmosDensHeight, float g, vec3 P1, vec
         integral+=t1*exp(-t2-t3);
     }
 
-    //float cosTheta=abs(dot(sunPos-P1, P2-P1))/length(sunPos-P1)/length(P2-P1);
-    return /*sunlightIntensity(lambda) * scattering(lambda) * phase(cosTheta,g) * */integral / numberOfIterations1;
+    float cosTheta=abs(dot(sunPos-P1, P2-P1))/length(sunPos-P1)/length(P2-P1);
+
+    return sunlightIntensity(lambda) * scattering(lambda) * phase(cosTheta,g) * integral / numberOfIterations1;
 }
 
 void main()
 {
-    vec3 sunPos=vec3(0,0,1000);
+    vec3 sunPos=vec3(1000,0,1000);
     vec3 spherePos=vec3(0,0,300);
     float planetR=100;
-    float atmosphereR=150;
+    float atmosphereR=200;
     
     float g=0;
     float lambda=0.55;
@@ -102,17 +97,39 @@ void main()
 
     rayDir=rayDir/length(rayDir);
 
-    vec2 d=rayBallIntersection(rayDir, rayPos, spherePos, planetR);
+    vec2 d=rayBallIntersection(rayDir, rayPos, spherePos, atmosphereR);
+
+    vec2 dPlanet=rayBallIntersection(rayDir,rayPos,spherePos,planetR);
 
     vec3 P1=d.x*rayDir+rayPos;
     vec3 P2=d.y*rayDir+rayPos;
 
-    float value=0;
-    value=inScattering(lambda, avgAtmosDensHeight, g, P1,P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
-    if (value>=0){
-        FragColor=vec4(value, value, value,0);
+    float tPlanet=min(dPlanet.x, dPlanet.y);
+
+    vec3 Q=tPlanet*rayDir+rayPos-spherePos;
+
+    vec4 planetColor=vec4(0,0,0,0);
+
+    if (tPlanet>0){
+        Q=Q/length(Q);
+        float theta=atan(Q.z,Q.x);
+        float phi=acos(Q.y);
+        float u=(theta+3.141592)/(2*3.141592);
+        float v=phi/3.141592;
+        planetColor=vec4(texture(texture1, vec2(u,v)));
     }
     else{
-        FragColor=vec4(1,0,1,0);
+        planetColor=vec4(0,0,0,0);
     }
+
+    vec4 atmosphereColor=vec4(0,0,0,0);
+    if ((d.x>0 || d.y>0) /*&& dPlanet.x<=0 && dPlanet.y<=0*/){
+        float value=0;
+        value=inScattering(lambda, avgAtmosDensHeight, g, P1,P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
+        if (value>0){
+            atmosphereColor=vec4(value, value, value,0);
+        }
+    }
+
+    FragColor=planetColor*0.5+atmosphereColor*0.5;
 }
