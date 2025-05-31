@@ -3,6 +3,8 @@
 #endif
 #include "stb_image.h"
 #include "header.hpp"
+#include "input.cpp"
+
 
 int main(){
     glfwInit();
@@ -10,7 +12,7 @@ int main(){
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Hello Triangle", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(800, 800, "Atmosphere", nullptr, nullptr);
     if (!window)
     {
         std::cerr << "Failed to create GLFW window" << std::endl;
@@ -83,14 +85,65 @@ int main(){
 
    GLuint shaderProgram = createShaderProgram("shader.vert", "shader.frag");
 
+   float playerData[10]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+   GLint dataLocation = glGetUniformLocation(shaderProgram, "playerData");
+
+   glfwSetKeyCallback(window,key_callback);
+   glfwSetMouseButtonCallback(window,mouse_button_callback);
+   glfwSetCursorPosCallback(window, cursor_position_callback);
+
+
+
+    Vec3 pos=Vec3(0,0,0);
+    Vec3 vel=Vec3(0,0,0);
+    Vec2 rot=Vec2(0,0);
+    float rotVel=-0.01;
+    float movVel=1;
     while (!glfwWindowShouldClose(window))
     {
         // Input handling
-        // ...
+        glfwPollEvents();
+        if (keys[GLFW_KEY_W]){
+            vel.x-=sin(rot.x);
+            vel.z+=cos(rot.x);
+        }
+        if (keys[GLFW_KEY_S]){
+            vel.x+=sin(rot.x);
+            vel.z-=cos(rot.x);
+        }
+        if (keys[GLFW_KEY_D]){
+            vel.x+=cos(rot.x);
+            vel.z+=sin(rot.x);
+        }
+        if (keys[GLFW_KEY_A]){
+            vel.x-=cos(rot.x);
+            vel.z-=sin(rot.x);
+        }
+        vel.normalized();
+        if (keys[GLFW_KEY_UP]){
+            rot.y-=rotVel;
+        }
+        if (keys[GLFW_KEY_DOWN]){
+            rot.y+=rotVel;
+        }
+        if (keys[GLFW_KEY_RIGHT]){
+            rot.x+=rotVel;
+        }
+        if (keys[GLFW_KEY_LEFT]){
+            rot.x-=rotVel;
+        }
+        pos=pos+vel*movVel;
+        vel=vel*0;
+        playerData[0]+=0.001;
+        playerData[1]=pos.x;
+        playerData[2]=pos.y;
+        playerData[3]=pos.z;
+        playerData[4]=rot.x;
+        playerData[5]=rot.y;
 
+        
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
-
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -100,6 +153,9 @@ int main(){
         glUniform1i(glGetUniformLocation(shaderProgram, "texture1"), 0); // texture unit 0
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+        glUniform1fv(dataLocation,10, playerData);
 
         // Swap buffers and poll IO events
         glfwSwapBuffers(window);
