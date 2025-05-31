@@ -129,7 +129,7 @@ float totalScattering(float lambda, float avgAtmosDensHeight, float g, vec3 P1, 
 void main()
 {
     float time=playerData[0];
-    vec3 sunPos=vec3(10000*cos(time),0,10000*sin(time));
+    vec3 sunPos=vec3(10000*cos(-1.5+0*time),0,10000*sin(-1.5+0*time));
     vec3 spherePos=vec3(0,0,300);
     float planetR=200;
     float atmosphereR=250;
@@ -139,11 +139,17 @@ void main()
     float reflection=1;
     float scatterStrength=0.5;
 
+    float lambdaR=0.650;
+    float lambdaG=0.550;
+    float lambdaB=0.450;
+
+
     int numberOfIterations1=10;
     int numberOfIterations2=10;
 
     vec3 rayPos=vec3(playerData[1],playerData[2],playerData[3]);
     vec3 rayDir=normalize(vec3(VPos.x, VPos.y, 1));
+    //rayDir=normalize(vec3(tan(VPos.x), tan(VPos.y), 1));
 
     rayDir=rotate(rayDir, vec2(playerData[4], playerData[5]));
 
@@ -178,21 +184,17 @@ void main()
 
     vec4 atmosphereColor=vec4(0,0,0,0);
     if ((d.x>0 || d.y>0) /*&& dPlanet.x<=0 && dPlanet.y<=0*/){
-        float red=totalScattering(0.650, avgAtmosDensHeight, g, P1, P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
-        float green=totalScattering(0.550, avgAtmosDensHeight, g, P1, P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
-        float blue=totalScattering(0.450, avgAtmosDensHeight, g, P1, P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
+        float red=totalScattering(lambdaR, avgAtmosDensHeight, g, P1, P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
+        float green=totalScattering(lambdaG, avgAtmosDensHeight, g, P1, P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
+        float blue=totalScattering(lambdaB, avgAtmosDensHeight, g, P1, P2, numberOfIterations1, numberOfIterations2, spherePos, sunPos, atmosphereR, planetR);
         atmosphereColor=vec4(red, green, blue,0);
     }
-    vec2 l=rayBallIntersection((P2-P1)/length(P2-P1), P1, spherePos, planetR);
-    scatterStrength=0.5;
-    if (l.y<0){
-        scatterStrength=1;
 
+    float strengthR=scattering(lambdaR)*exp(-outScattering(P1,P2, lambdaR, avgAtmosDensHeight, numberOfIterations1, spherePos, atmosphereR,planetR));
+    float strengthG=scattering(lambdaR)*exp(-outScattering(P1,P2, lambdaG, avgAtmosDensHeight, numberOfIterations1, spherePos, atmosphereR,planetR));
+    float strengthB=scattering(lambdaR)*exp(-outScattering(P1,P2, lambdaB, avgAtmosDensHeight, numberOfIterations1, spherePos, atmosphereR,planetR));
 
-        //P2=P1+l.x*(P2-P1)/length(P2-P1);
-        //vec3 normal = (P2-spherePos)/length(P2-spherePos);
-        //scatterStrength=scatteringStrength(P2, sunPos, normal)*0+0.5;
-    }
-    //scatterStrength=1;
-    FragColor=(atmosphereColor)*(scatterStrength)+planetColor*(1-scatterStrength);
+    vec3 strength=vec3(strengthR, strengthG, strengthB);
+
+    FragColor=mix(planetColor, atmosphereColor, vec4(strength,1));
 }
