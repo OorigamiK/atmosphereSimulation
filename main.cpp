@@ -96,7 +96,7 @@ int main(){
 
     Vec3 pos=Vec3(0,0,0);
     Vec3 vel=Vec3(0,0,0);
-    Vec2 rot=Vec2(0,0);
+    Vec2 rot=Vec2(0,-3.141592653/2);
     float rotVel=-0.01;
     float movVel=1;
     while (!glfwWindowShouldClose(window))
@@ -119,12 +119,18 @@ int main(){
             vel.x-=cos(rot.x);
             vel.z-=sin(rot.x);
         }
+        if (keys[GLFW_KEY_SPACE]){
+            vel.y-=1;;
+        }
+        if (keys[GLFW_KEY_LEFT_SHIFT]){
+            vel.y+=1;;
+        }
         vel.normalized();
         if (keys[GLFW_KEY_UP]){
-            rot.y-=rotVel;
+            rot.y+=rotVel;
         }
         if (keys[GLFW_KEY_DOWN]){
-            rot.y+=rotVel;
+            rot.y-=rotVel;
         }
         if (keys[GLFW_KEY_RIGHT]){
             rot.x+=rotVel;

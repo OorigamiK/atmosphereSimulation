@@ -9,11 +9,10 @@ uniform float playerData[10];
 
 vec3 rotate(vec3 rayDir, vec2 rot){
     vec3 newDir=rayDir;
-    newDir.x=rayDir.x*cos(rot.x)-rayDir.z*sin(rot.x);
-    newDir.z=rayDir.x*sin(rot.x)+rayDir.z*cos(rot.x);
-    rayDir=newDir;
-    newDir.x=rayDir.x*cos(rot.y)-rayDir.y*sin(rot.y);
-    newDir.y=rayDir.x*sin(rot.y)+rayDir.y*cos(rot.y);
+    newDir.y=rayDir.y*sin(rot.y)+rayDir.z*cos(rot.y);
+    newDir.z=rayDir.y*cos(rot.y)-rayDir.z*sin(rot.y);
+    newDir.x=rayDir.x*cos(rot.x)-newDir.z*sin(rot.x);
+    newDir.z=rayDir.x*sin(rot.x)+newDir.z*cos(rot.x);
     return newDir;
 }
 
@@ -129,13 +128,13 @@ float totalScattering(float lambda, float avgAtmosDensHeight, float g, vec3 P1, 
 void main()
 {
     float time=playerData[0];
-    vec3 sunPos=vec3(10000*cos(-1.5+0*time),0,10000*sin(-1.5+0*time));
-    vec3 spherePos=vec3(0,0,300);
-    float planetR=200;
-    float atmosphereR=250;
+    vec3 sunPos=vec3(10000*cos(-1.5+10*time),0,10000*sin(-1.5+10*time));
+    vec3 spherePos=vec3(0,0,1000);
+    float planetR=800;
+    float atmosphereR=850;
     
     float g=0;
-    float avgAtmosDensHeight=0.5;
+    float avgAtmosDensHeight=0.25;
     float reflection=1;
     float scatterStrength=0.5;
 
