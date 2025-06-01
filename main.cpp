@@ -5,6 +5,12 @@
 #include "header.hpp"
 #include "input.cpp"
 
+#include "libraries/imgui/imgui.h"
+#include "libraries/imgui/imgui_internal.h"
+#include "libraries/imgui/imconfig.h"
+
+#include "libraries/imgui/backends/imgui_impl_glfw.h"
+#include "libraries/imgui/backends/imgui_impl_opengl3.h"
 
 int main(){
     glfwInit();
@@ -20,6 +26,16 @@ int main(){
         return -1;
     }
     glfwMakeContextCurrent(window);
+
+        // After creating your GLFW window and OpenGL context:
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330 core");
+
 
     // Initialize GLAD before calling any OpenGL functions
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -92,8 +108,6 @@ int main(){
    glfwSetMouseButtonCallback(window,mouse_button_callback);
    glfwSetCursorPosCallback(window, cursor_position_callback);
 
-
-
     Vec3 pos=Vec3(0,0,0);
     Vec3 vel=Vec3(0,0,0);
     Vec2 rot=Vec2(0,-3.141592653/2);
@@ -140,13 +154,24 @@ int main(){
         }
         pos=pos+vel*movVel;
         vel=vel*0;
-        playerData[0]+=0.001;
+        //playerData[0]+=0.001;
         playerData[1]=pos.x;
         playerData[2]=pos.y;
         playerData[3]=pos.z;
         playerData[4]=rot.x;
         playerData[5]=rot.y;
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        
+        ImGui::Begin("Example Slider Window");
+        ImGui::SliderFloat("time", &playerData[0], 0.0f, 1.0f);
+        //ImGui::Text("Value = %.3f", playerData[0]);
+        ImGui::End();
+        
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -162,6 +187,10 @@ int main(){
 
 
         glUniform1fv(dataLocation,10, playerData);
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
         // Swap buffers and poll IO events
         glfwSwapBuffers(window);
