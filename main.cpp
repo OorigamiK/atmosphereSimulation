@@ -36,6 +36,10 @@ int main(){
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
+    glfwSetMouseButtonCallback(window, ImGui_ImplGlfw_MouseButtonCallback);
+    glfwSetScrollCallback(window, ImGui_ImplGlfw_ScrollCallback);
+    glfwSetKeyCallback(window, ImGui_ImplGlfw_KeyCallback);
+    glfwSetCharCallback(window, ImGui_ImplGlfw_CharCallback);
 
     // Initialize GLAD before calling any OpenGL functions
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -104,9 +108,9 @@ int main(){
    float playerData[10]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
    GLint dataLocation = glGetUniformLocation(shaderProgram, "playerData");
 
-   glfwSetKeyCallback(window,key_callback);
-   glfwSetMouseButtonCallback(window,mouse_button_callback);
-   glfwSetCursorPosCallback(window, cursor_position_callback);
+   //glfwSetKeyCallback(window,key_callback);
+   //glfwSetMouseButtonCallback(window,mouse_button_callback);
+   //glfwSetCursorPosCallback(window, cursor_position_callback);
 
     Vec3 pos=Vec3(0,0,0);
     Vec3 vel=Vec3(0,0,0);
@@ -117,39 +121,39 @@ int main(){
     {
         // Input handling
         glfwPollEvents();
-        if (keys[GLFW_KEY_W]){
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
             vel.x-=sin(rot.x);
             vel.z+=cos(rot.x);
         }
-        if (keys[GLFW_KEY_S]){
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
             vel.x+=sin(rot.x);
             vel.z-=cos(rot.x);
         }
-        if (keys[GLFW_KEY_D]){
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
             vel.x+=cos(rot.x);
             vel.z+=sin(rot.x);
         }
-        if (keys[GLFW_KEY_A]){
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
             vel.x-=cos(rot.x);
             vel.z-=sin(rot.x);
         }
-        if (keys[GLFW_KEY_SPACE]){
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
             vel.y-=1;;
         }
-        if (keys[GLFW_KEY_LEFT_SHIFT]){
+        if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
             vel.y+=1;;
         }
         vel.normalized();
-        if (keys[GLFW_KEY_UP]){
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
             rot.y+=rotVel;
         }
-        if (keys[GLFW_KEY_DOWN]){
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
             rot.y-=rotVel;
         }
-        if (keys[GLFW_KEY_RIGHT]){
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
             rot.x+=rotVel;
         }
-        if (keys[GLFW_KEY_LEFT]){
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
             rot.x-=rotVel;
         }
         pos=pos+vel*movVel;
@@ -169,10 +173,7 @@ int main(){
         ImGui::SliderFloat("time", &playerData[0], 0.0f, 1.0f);
         //ImGui::Text("Value = %.3f", playerData[0]);
         ImGui::End();
-        
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        
+                
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
         // Render
@@ -194,7 +195,6 @@ int main(){
 
         // Swap buffers and poll IO events
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     // Deallocate resources
