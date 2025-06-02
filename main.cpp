@@ -171,6 +171,8 @@ int main(){
         
         ImGui::Begin("Example Slider Window");
         ImGui::SliderFloat("time", &playerData[0], 0.0f, 1.0f);
+        ImGui::SliderFloat("scatter strength", &playerData[6], 0.0f, 1.0f);
+
         //ImGui::Text("Value = %.3f", playerData[0]);
         ImGui::End();
                 
