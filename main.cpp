@@ -105,7 +105,7 @@ int main(){
 
    GLuint shaderProgram = createShaderProgram("shader.vert", "shader.frag");
 
-   float playerData[10]={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+   float playerData[10]={0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.65, 0.55, 0.45};
    GLint dataLocation = glGetUniformLocation(shaderProgram, "playerData");
 
    //glfwSetKeyCallback(window,key_callback);
@@ -172,6 +172,10 @@ int main(){
         ImGui::Begin("Example Slider Window");
         ImGui::SliderFloat("time", &playerData[0], 0.0f, 1.0f);
         ImGui::SliderFloat("scatter strength", &playerData[6], 0.0f, 1.0f);
+        ImGui::SliderFloat("R", &playerData[7], 0.0f, 1.0f);
+        ImGui::SliderFloat("G", &playerData[8], 0.0f, 1.0f);
+        ImGui::SliderFloat("B", &playerData[9], 0.0f, 1.0f);
+
 
         //ImGui::Text("Value = %.3f", playerData[0]);
         ImGui::End();

@@ -72,7 +72,7 @@ float outScattering(vec3 P1, vec3 P2, float strength, float lambda, float avgAtm
     return integral*length(P1-P2)/(2*atmosphereR)*scattering(lambda, strength)/numberOfIterations;
 }
 
-vec3 toSun(vec3 P, vec3 sunPos, vec3 spherePos, float atmosphereR){
+vec3 toSun(vec3 P, vec3 sunPos, vec3 spherePos, float atmosphereR, float planetR){
     vec3 rayDir=(sunPos-P)/length(sunPos-P);
     vec2 distances=rayBallIntersection(rayDir, P, spherePos, atmosphereR);
     return P+rayDir*distances.y;
@@ -84,12 +84,18 @@ float inScattering(float strength, float lambda, float avgAtmosDensHeight, float
     for (int i=0;i<numberOfIterations1;i++){
         float t=float(i + 0.5)/numberOfIterations1;
         vec3 P=(1-t)*P1+t*P2;
-        vec3 PToSun=toSun(P, sunPos, spherePos, atmosphereR);
+        vec3 PToSun=toSun(P, sunPos, spherePos, atmosphereR, planetR);
         float distToSpherePos=length(spherePos-P);
         float height= (distToSpherePos-planetR)/(atmosphereR-planetR);
         height=max(0,min(1, height));
         float t1=exp(-height/avgAtmosDensHeight)*(1-height);
         float t2 = outScattering(P, PToSun, strength, lambda, avgAtmosDensHeight,  numberOfIterations2, spherePos, atmosphereR, planetR);
+
+        /*float toPlanet=rayBallIntersection(rayDir, P, spherePos, planetR).x;
+        if (toPlanet==0){
+            t2=0;
+        }*/
+
         float t3 = outScattering(P, P1, strength, lambda, avgAtmosDensHeight, numberOfIterations2, spherePos, atmosphereR, planetR);
         integral+=t1*exp(-t2-t3);
     }
@@ -104,11 +110,11 @@ float surfaceScattering(float reflection, float strength, float lambda, float av
 
     vec3 normal = -normalize(spherePos-P2);
 
-    vec3 sunDir=normalize(spherePos-sunPos);
+    vec3 sunDir=-normalize(spherePos-sunPos);
 
     float cosTheta=max(0, dot(normal, sunDir));
 
-    float scatterStrength=reflection*cosTheta*scattering(lambda, strength)*exp(-outScattering(P1, toSun(P1,sunPos, spherePos, atmosphereR), strength, lambda, avgAtmosDensHeight,  numberOfIterations2, spherePos, atmosphereR, planetR));
+    float scatterStrength=reflection*cosTheta*scattering(lambda, strength)*exp(-outScattering(P1, toSun(P1,sunPos, spherePos, atmosphereR, planetR), strength, lambda, avgAtmosDensHeight,  numberOfIterations2, spherePos, atmosphereR, planetR));
 
     return I_v+scatterStrength*exp(-outScattering(P1, P2, strength, lambda, avgAtmosDensHeight, numberOfIterations2, spherePos, atmosphereR, planetR));
 }
@@ -130,14 +136,18 @@ void main()
     vec3 sunPos=vec3(10000*cos(2*3.141*time),0,10000*sin(2*3.141*time));
     vec3 spherePos=vec3(0,0,1500);
     float planetR=800;
-    float atmosphereR=850;
+    float atmosphereR=1200;
     
     float g=0;
-    float avgAtmosDensHeight=0.25;
+    float avgAtmosDensHeight=0.03125;
 
-    float lambdaR=0.650;
-    float lambdaG=0.550;
-    float lambdaB=0.450;
+    //float lambdaR=0.650;
+    //float lambdaG=0.550;
+    //float lambdaB=0.450;
+
+    float lambdaR=playerData[7];
+    float lambdaG=playerData[8];
+    float lambdaB=playerData[9];
 
     float scatterStrength=playerData[6];
 
@@ -146,7 +156,6 @@ void main()
 
     vec3 rayPos=vec3(playerData[1],playerData[2],playerData[3]);
     vec3 rayDir=normalize(vec3(VPos.x, VPos.y, 1));
-    //rayDir=normalize(vec3(tan(VPos.x), tan(VPos.y), 1));
 
     rayDir=rotate(rayDir, vec2(playerData[4], playerData[5]));
 
@@ -176,6 +185,8 @@ void main()
         float lightRes=max(0,dot(lightDir,Q));
         planetColor=planetColor*lightRes;
         //planetColor=vec4(1,1,1,1);
+                planetColorNoShadow=planetColor;
+
 
     }
     else{
@@ -194,7 +205,8 @@ void main()
     float strengthB=scattering(lambdaB, scatterStrength)*exp(-outScattering(P1,P2, scatterStrength, lambdaB, avgAtmosDensHeight, numberOfIterations1, spherePos, atmosphereR,planetR));
     vec3 strength=vec3(strengthR, strengthG, strengthB);
     FragColor=mix(planetColor, atmosphereColor, vec4(strength,1));
-    //FragColor=vec4(atmosphereColor.xyz,1);
+
+    //gamma correction
     const float gamma = 2.2;
     FragColor.rgb = pow(FragColor.rgb, vec3(1.0 / gamma));
 }
